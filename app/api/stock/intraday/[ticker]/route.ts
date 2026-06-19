@@ -46,10 +46,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           throw new Error("No price data available")
         }
 
-        const cryptoData = data.prices
-          .slice(0, 30)
+        const pricesSlice = data.prices.slice(-30)
+        const startIndex = data.prices.length - pricesSlice.length
+
+        const cryptoData = pricesSlice
           .flatMap(([timestamp, price]: [number, number], dayIndex: number) => {
-            const volume = data.total_volumes[dayIndex]?.[1] || 0
+            const volumeIndex = startIndex + dayIndex
+            const volume = data.total_volumes[volumeIndex]?.[1] || 0
 
             return Array.from({ length: 96 }, (_, i) => {
               const intervalTime = new Date(timestamp + i * 15 * 60 * 1000)
@@ -67,7 +70,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               }
             })
           })
-          .reverse()
 
         console.log("[v0] Successfully fetched", cryptoData.length, "crypto data points from CoinGecko")
         return NextResponse.json({ data: cryptoData })
@@ -100,38 +102,36 @@ function generateRealisticCryptoData(ticker: string, days: number) {
   const now = new Date()
 
   const intervalsPerDay = 96
+  const totalIntervals = days * intervalsPerDay
 
-  for (let day = days; day >= 0; day--) {
-    for (let interval = 0; interval < intervalsPerDay; interval++) {
-      const timestamp = new Date(now.getTime() - day * 24 * 60 * 60 * 1000)
-      timestamp.setMinutes(interval * 15, 0, 0)
+  for (let i = totalIntervals; i >= 0; i--) {
+    const timestamp = new Date(now.getTime() - i * 15 * 60 * 1000)
 
-      const volatility = 0.025 // 2.5% volatility
-      const change = (Math.random() - 0.5) * volatility
-      currentPrice = currentPrice * (1 + change)
+    const volatility = 0.025 // 2.5% volatility
+    const change = (Math.random() - 0.5) * volatility
+    currentPrice = currentPrice * (1 + change)
 
-      const open = currentPrice
-      const high = currentPrice * (1 + Math.random() * 0.012)
-      const low = currentPrice * (1 - Math.random() * 0.012)
-      const close = low + Math.random() * (high - low)
+    const open = currentPrice
+    const high = currentPrice * (1 + Math.random() * 0.012)
+    const low = currentPrice * (1 - Math.random() * 0.012)
+    const close = low + Math.random() * (high - low)
 
-      const volumeMultiplier = ticker === "BTC" ? 10000000000 : ticker === "ETH" ? 5000000000 : 2000000000
-      const volume = Math.floor(volumeMultiplier * (0.8 + Math.random() * 0.4))
+    const volumeMultiplier = ticker === "BTC" ? 10000000000 : ticker === "ETH" ? 5000000000 : 2000000000
+    const volume = Math.floor(volumeMultiplier * (0.8 + Math.random() * 0.4))
 
-      data.push({
-        timestamp: timestamp.toISOString(),
-        open,
-        high,
-        low,
-        close,
-        volume,
-      })
+    data.push({
+      timestamp: timestamp.toISOString(),
+      open,
+      high,
+      low,
+      close,
+      volume,
+    })
 
-      currentPrice = close
-    }
+    currentPrice = close
   }
 
-  return data.reverse()
+  return data
 }
 
 function getIndianStockBasePrice(symbol: string): number {
@@ -180,5 +180,5 @@ function generateRealisticIndianStockData(basePrice: number, days: number) {
     }
   }
 
-  return data.reverse()
+  return data
 }

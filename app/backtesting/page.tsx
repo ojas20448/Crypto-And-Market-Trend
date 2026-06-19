@@ -14,7 +14,7 @@ import { runBacktest, type BacktestConfig, type BacktestResult } from "@/lib/bac
 import { RefreshCw } from "lucide-react"
 
 export default function BacktestingPage() {
-  const [selectedTicker, setSelectedTicker] = useState("AAPL")
+  const [selectedTicker, setSelectedTicker] = useState("BTC")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<BacktestResult | null>(null)
 

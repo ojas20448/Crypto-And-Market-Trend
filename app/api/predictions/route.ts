@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const ticker = searchParams.get("ticker") || "AAPL"
+    const ticker = searchParams.get("ticker") || "BTC"
     const timeframe = searchParams.get("timeframe") || "1h"
 
     // Fetch stock data

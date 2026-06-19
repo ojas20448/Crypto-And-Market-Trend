@@ -34,8 +34,22 @@ export default function HomePage() {
     setLoading(true)
     try {
       const data = await fetchStockData(selectedTicker)
-      setChartData(data)
       const quote = await fetchStockQuote(selectedTicker)
+
+      if (quote && data.length > 0) {
+        const updatedData = [...data]
+        const lastIndex = updatedData.length - 1
+        updatedData[lastIndex] = {
+          ...updatedData[lastIndex],
+          close: quote.price,
+          high: Math.max(updatedData[lastIndex].high, quote.price),
+          low: Math.min(updatedData[lastIndex].low, quote.price),
+        }
+        setChartData(updatedData)
+      } else {
+        setChartData(data)
+      }
+
       setMarketData(quote)
       setLastUpdate(new Date())
     } catch (error) {
@@ -179,50 +193,56 @@ export default function HomePage() {
           <>
             {marketData && chartData.length > 0 && (
               <div className="grid gap-4 md:grid-cols-4">
-                <Card>
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">Current Price</div>
-                    <div className="text-2xl font-bold">
-                      ₹{chartData[chartData.length - 1]?.close?.toFixed(2) ?? "N/A"}
+                    <div className="text-2xl font-bold mt-1 tracking-tight">
+                      ₹{marketData.price?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "N/A"}
                     </div>
+                    {marketData.change !== undefined && marketData.changePercent !== undefined && (
+                      <div className={`text-xs font-semibold mt-2 flex items-center gap-1 ${marketData.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                        <span>{marketData.change >= 0 ? "▲" : "▼"}</span>
+                        <span>
+                          {marketData.change >= 0 ? "+" : ""}
+                          {marketData.change?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {" "}
+                          ({marketData.changePercent})
+                        </span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">24h High</div>
-                    <div className="text-2xl font-bold">
-                      ₹{(() => {
-                        const highs = chartData
-                          .slice(-96)
-                          .map((d) => d.high)
-                          .filter((h) => h != null)
-                        return highs.length > 0 ? Math.max(...highs).toFixed(2) : "N/A"
-                      })()}
+                    <div className="text-2xl font-bold mt-1 tracking-tight">
+                      ₹{marketData.high?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "N/A"}
                     </div>
+                    <div className="text-xs text-muted-foreground mt-2">Daily high threshold</div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">24h Low</div>
-                    <div className="text-2xl font-bold">
-                      ₹{(() => {
-                        const lows = chartData
-                          .slice(-96)
-                          .map((d) => d.low)
-                          .filter((l) => l != null)
-                        return lows.length > 0 ? Math.min(...lows).toFixed(2) : "N/A"
-                      })()}
+                    <div className="text-2xl font-bold mt-1 tracking-tight">
+                      ₹{marketData.low?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "N/A"}
                     </div>
+                    <div className="text-xs text-muted-foreground mt-2">Daily low threshold</div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">Volume</div>
-                    <div className="text-2xl font-bold">
-                      {chartData[chartData.length - 1]?.volume
-                        ? (chartData[chartData.length - 1].volume / 1000000).toFixed(2) + "M"
+                    <div className="text-2xl font-bold mt-1 tracking-tight">
+                      {marketData.volume
+                        ? marketData.volume >= 1000000000
+                          ? (marketData.volume / 1000000000).toFixed(2) + "B"
+                          : marketData.volume >= 1000000
+                          ? (marketData.volume / 1000000).toFixed(2) + "M"
+                          : marketData.volume.toLocaleString("en-IN")
                         : "N/A"}
                     </div>
+                    <div className="text-xs text-muted-foreground mt-2">24-hour total volume</div>
                   </CardContent>
                 </Card>
               </div>
