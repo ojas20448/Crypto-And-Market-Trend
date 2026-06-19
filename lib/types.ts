@@ -26,6 +26,11 @@ export interface TechnicalIndicators {
   adx?: number
   plusDI?: number
   minusDI?: number
+  superTrendUpper?: number
+  superTrendLower?: number
+  superTrendDirection?: number
+  zScore?: number
+  mfi?: number
 }
 
 export interface Prediction {

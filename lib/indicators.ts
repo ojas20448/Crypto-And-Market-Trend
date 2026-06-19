@@ -301,6 +301,9 @@ export function generateSignals(data: {
   bollingerLower?: number
   stochasticK?: number
   adx?: number
+  superTrendDirection?: number
+  zScore?: number
+  mfi?: number
 }): TradingSignal[] {
   const signals: TradingSignal[] = []
 
@@ -342,6 +345,33 @@ export function generateSignals(data: {
     signals.push({ type: "sell", strength: 0.5, reason: "Stochastic overbought" })
   }
 
+  // SuperTrend signals
+  if (data.superTrendDirection !== undefined) {
+    if (data.superTrendDirection === 1) {
+      signals.push({ type: "buy", strength: 0.6, reason: "SuperTrend bullish" })
+    } else if (data.superTrendDirection === -1) {
+      signals.push({ type: "sell", strength: 0.6, reason: "SuperTrend bearish" })
+    }
+  }
+
+  // Z-Score signals
+  if (data.zScore !== undefined) {
+    if (data.zScore < -2.0) {
+      signals.push({ type: "buy", strength: 0.6, reason: "Z-Score oversold (< -2.0)" })
+    } else if (data.zScore > 2.0) {
+      signals.push({ type: "sell", strength: 0.6, reason: "Z-Score overbought (> 2.0)" })
+    }
+  }
+
+  // MFI signals
+  if (data.mfi !== undefined) {
+    if (data.mfi < 20) {
+      signals.push({ type: "buy", strength: 0.65, reason: "MFI oversold (< 20)" })
+    } else if (data.mfi > 80) {
+      signals.push({ type: "sell", strength: 0.65, reason: "MFI overbought (> 80)" })
+    }
+  }
+
   // Trend strength (ADX)
   if (data.adx && data.adx > 25) {
     const lastSignal = signals[signals.length - 1]
@@ -356,4 +386,118 @@ export function generateSignals(data: {
   }
 
   return signals
+}
+
+export function calculateSuperTrend(
+  high: number[],
+  low: number[],
+  close: number[],
+  period = 10,
+  multiplier = 3,
+): { upper: number[]; lower: number[]; direction: (1 | -1)[] } {
+  const atr = calculateATR(high, low, close, period)
+  const upper: number[] = []
+  const lower: number[] = []
+  const direction: (1 | -1)[] = []
+
+  // Initialize
+  for (let i = 0; i < close.length; i++) {
+    upper[i] = close[i]
+    lower[i] = close[i]
+    direction[i] = 1
+  }
+
+  for (let i = period; i < close.length; i++) {
+    const src = (high[i] + low[i]) / 2
+    const currentAtr = atr[i] || 0
+
+    const basicUpper = src + multiplier * currentAtr
+    const basicLower = src - multiplier * currentAtr
+
+    upper[i] = basicUpper < (upper[i - 1] || 0) || close[i - 1] > (upper[i - 1] || 0)
+      ? basicUpper
+      : upper[i - 1]
+
+    lower[i] = basicLower > (lower[i - 1] || 0) || close[i - 1] < (lower[i - 1] || 0)
+      ? basicLower
+      : lower[i - 1]
+
+    if (close[i] > (upper[i - 1] || 0)) {
+      direction[i] = 1
+    } else if (close[i] < (lower[i - 1] || 0)) {
+      direction[i] = -1
+    } else {
+      direction[i] = direction[i - 1]
+    }
+  }
+
+  return { upper, lower, direction }
+}
+
+export function calculateZScore(data: number[], period = 20): number[] {
+  const zscore: number[] = []
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      zscore[i] = 0
+      continue
+    }
+
+    const slice = data.slice(i - period + 1, i + 1)
+    const sma = slice.reduce((sum, val) => sum + val, 0) / period
+    const variance = slice.reduce((sum, val) => sum + Math.pow(val - sma, 2), 0) / period
+    const std = Math.sqrt(variance)
+
+    if (std === 0) {
+      zscore[i] = 0
+    } else {
+      zscore[i] = (data[i] - sma) / std
+    }
+  }
+
+  return zscore
+}
+
+export function calculateMFI(
+  high: number[],
+  low: number[],
+  close: number[],
+  volume: number[],
+  period = 14,
+): number[] {
+  const mfi: number[] = []
+  const typicalPrice: number[] = []
+
+  for (let i = 0; i < close.length; i++) {
+    typicalPrice[i] = (high[i] + low[i] + close[i]) / 3
+  }
+
+  for (let i = 0; i < close.length; i++) {
+    if (i < period) {
+      mfi[i] = 50
+      continue
+    }
+
+    let positiveFlow = 0
+    let negativeFlow = 0
+
+    for (let j = i - period + 1; j <= i; j++) {
+      if (j === 0) continue
+      const flow = typicalPrice[j] * volume[j]
+      if (typicalPrice[j] > typicalPrice[j - 1]) {
+        positiveFlow += flow
+      } else if (typicalPrice[j] < typicalPrice[j - 1]) {
+        negativeFlow += flow
+      }
+    }
+
+    if (negativeFlow === 0) {
+      mfi[i] = positiveFlow === 0 ? 50 : 100
+    } else {
+      const moneyRatio = positiveFlow / negativeFlow
+      mfi[i] = 100 - 100 / (1 + moneyRatio)
+    }
+  }
+
+  return mfi
 }

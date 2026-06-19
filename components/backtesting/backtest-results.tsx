@@ -28,9 +28,16 @@ export function BacktestResults({ result }: BacktestResultsProps) {
     {
       title: "Sharpe Ratio",
       value: result.sharpeRatio.toFixed(2),
-      subtitle: "Risk-adjusted return",
+      subtitle: "Total risk-adjusted return",
       icon: Activity,
       color: "text-chart-2",
+    },
+    {
+      title: "Sortino Ratio",
+      value: result.sortinoRatio.toFixed(2),
+      subtitle: "Downside risk-adjusted",
+      icon: Activity,
+      color: "text-chart-5",
     },
     {
       title: "Max Drawdown",
@@ -91,7 +98,7 @@ export function BacktestResults({ result }: BacktestResultsProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {metricCards.map((metric) => (
           <Card key={metric.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

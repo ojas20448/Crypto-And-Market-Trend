@@ -9,6 +9,9 @@ import {
   calculateOBV,
   calculateVWAP,
   calculateADX,
+  calculateSuperTrend,
+  calculateZScore,
+  calculateMFI,
 } from "./indicators"
 
 export async function fetchStockData(ticker: string, interval = "15m"): Promise<ChartDataPoint[]> {
@@ -132,6 +135,9 @@ export function calculateIndicators(stockData: StockData[]): ChartDataPoint[] {
   const obv = calculateOBV(closePrices, volumes)
   const vwap = calculateVWAP(highPrices, lowPrices, closePrices, volumes)
   const { adx, plusDI, minusDI } = calculateADX(highPrices, lowPrices, closePrices)
+  const { upper: stUpper, lower: stLower, direction: stDir } = calculateSuperTrend(highPrices, lowPrices, closePrices)
+  const zScore = calculateZScore(closePrices)
+  const mfi = calculateMFI(highPrices, lowPrices, closePrices, volumes)
 
   return validData.map((data, i) => {
     return {
@@ -159,6 +165,11 @@ export function calculateIndicators(stockData: StockData[]): ChartDataPoint[] {
       adx: adx[i] ?? 0,
       plusDI: plusDI[i] ?? 0,
       minusDI: minusDI[i] ?? 0,
+      superTrendUpper: stUpper[i] ?? data.close,
+      superTrendLower: stLower[i] ?? data.close,
+      superTrendDirection: stDir[i] ?? 1,
+      zScore: zScore[i] ?? 0,
+      mfi: mfi[i] ?? 50,
     }
   })
 }

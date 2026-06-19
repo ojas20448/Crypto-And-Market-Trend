@@ -97,6 +97,8 @@ export function BacktestConfigPanel({ config, onConfigChange, onRun, loading }: 
                 <SelectItem value="macd">MACD Strategy</SelectItem>
                 <SelectItem value="ema-crossover">EMA Crossover</SelectItem>
                 <SelectItem value="multi-indicator">Multi-Indicator</SelectItem>
+                <SelectItem value="supertrend">SuperTrend Strategy</SelectItem>
+                <SelectItem value="zscore">Z-Score Mean Reversion</SelectItem>
               </SelectContent>
             </Select>
           </div>

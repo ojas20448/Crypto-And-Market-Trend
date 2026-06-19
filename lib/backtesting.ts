@@ -7,7 +7,7 @@ export interface BacktestConfig {
   stopLoss: number // Percentage
   takeProfit: number // Percentage
   tradingFees: number // Percentage per trade
-  strategy: "rsi" | "macd" | "ema-crossover" | "multi-indicator" | "ai-signals"
+  strategy: "rsi" | "macd" | "ema-crossover" | "multi-indicator" | "ai-signals" | "supertrend" | "zscore"
 }
 
 export interface Trade {
@@ -35,6 +35,7 @@ export interface BacktestResult {
   totalPnLPercent: number
   maxDrawdown: number
   sharpeRatio: number
+  sortinoRatio: number
   profitFactor: number
   avgWin: number
   avgLoss: number
@@ -56,8 +57,15 @@ export function runBacktest(data: ChartDataPoint[], config: BacktestConfig): Bac
     const previous = data[i - 1]
 
     // Update equity curve
-    const currentEquity =
-      currentCapital + (currentPosition ? (current.close - currentPosition.entryPrice) * currentPosition.shares : 0)
+    let unrealizedPnL = 0
+    if (currentPosition) {
+      if (currentPosition.type === "long") {
+        unrealizedPnL = (current.close - currentPosition.entryPrice) * currentPosition.shares
+      } else {
+        unrealizedPnL = (currentPosition.entryPrice - current.close) * currentPosition.shares
+      }
+    }
+    const currentEquity = currentCapital + unrealizedPnL
 
     if (currentEquity > peakCapital) {
       peakCapital = currentEquity
@@ -109,10 +117,14 @@ export function runBacktest(data: ChartDataPoint[], config: BacktestConfig): Bac
         currentPosition.exitPrice = current.close
         currentPosition.status = "closed"
 
-        const pnl = (current.close - currentPosition.entryPrice) * currentPosition.shares
+        const rawPnL = currentPosition.type === "long"
+          ? (current.close - currentPosition.entryPrice) * currentPosition.shares
+          : (currentPosition.entryPrice - current.close) * currentPosition.shares
         const fees = (currentPosition.entryPrice + current.close) * currentPosition.shares * (config.tradingFees / 100)
-        currentPosition.pnl = pnl - fees
-        currentPosition.pnlPercent = ((current.close - currentPosition.entryPrice) / currentPosition.entryPrice) * 100
+        currentPosition.pnl = rawPnL - fees
+        currentPosition.pnlPercent = currentPosition.type === "long"
+          ? ((current.close - currentPosition.entryPrice) / currentPosition.entryPrice) * 100
+          : ((currentPosition.entryPrice - current.close) / currentPosition.entryPrice) * 100
         currentPosition.reason += ` | Exit: ${exitReason}`
 
         currentCapital += currentPosition.pnl
@@ -155,10 +167,14 @@ export function runBacktest(data: ChartDataPoint[], config: BacktestConfig): Bac
     currentPosition.exitPrice = lastPrice
     currentPosition.status = "closed"
 
-    const pnl = (lastPrice - currentPosition.entryPrice) * currentPosition.shares
+    const rawPnL = currentPosition.type === "long"
+      ? (lastPrice - currentPosition.entryPrice) * currentPosition.shares
+      : (currentPosition.entryPrice - lastPrice) * currentPosition.shares
     const fees = (currentPosition.entryPrice + lastPrice) * currentPosition.shares * (config.tradingFees / 100)
-    currentPosition.pnl = pnl - fees
-    currentPosition.pnlPercent = ((lastPrice - currentPosition.entryPrice) / currentPosition.entryPrice) * 100
+    currentPosition.pnl = rawPnL - fees
+    currentPosition.pnlPercent = currentPosition.type === "long"
+      ? ((lastPrice - currentPosition.entryPrice) / currentPosition.entryPrice) * 100
+      : ((currentPosition.entryPrice - lastPrice) / currentPosition.entryPrice) * 100
     currentPosition.reason += " | Exit: End of Backtest"
 
     currentCapital += currentPosition.pnl
@@ -179,13 +195,20 @@ export function runBacktest(data: ChartDataPoint[], config: BacktestConfig): Bac
 
   const profitFactor = avgLoss > 0 ? (avgWin * winningTrades.length) / (avgLoss * losingTrades.length) : 0
 
-  // Calculate Sharpe Ratio (simplified)
+  // Calculate Sharpe & Sortino Ratios (simplified)
   const returns = equityCurve.map((e, i) =>
     i > 0 ? (e.equity - equityCurve[i - 1].equity) / equityCurve[i - 1].equity : 0,
   )
   const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length
   const stdDev = Math.sqrt(returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length)
   const sharpeRatio = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0
+
+  const downsideReturns = returns.filter((r) => r < 0)
+  const downsideVariance = downsideReturns.length > 0
+    ? downsideReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / returns.length
+    : 0
+  const downsideDev = Math.sqrt(downsideVariance)
+  const sortinoRatio = downsideDev > 0 ? (avgReturn / downsideDev) * Math.sqrt(252) : 0
 
   return {
     config,
@@ -198,6 +221,7 @@ export function runBacktest(data: ChartDataPoint[], config: BacktestConfig): Bac
     totalPnLPercent,
     maxDrawdown,
     sharpeRatio,
+    sortinoRatio,
     profitFactor,
     avgWin,
     avgLoss,
@@ -227,6 +251,16 @@ function evaluateStrategy(
       if (current.ema8 < current.ema20 && previous.ema8 >= previous.ema20) return "short"
       return "hold"
 
+    case "supertrend":
+      if (current.superTrendDirection === 1 && previous.superTrendDirection === -1) return "long"
+      if (current.superTrendDirection === -1 && previous.superTrendDirection === 1) return "short"
+      return "hold"
+
+    case "zscore":
+      if ((current.zScore || 0) < -2.0 && (previous.zScore || 0) >= -2.0) return "long"
+      if ((current.zScore || 0) > 2.0 && (previous.zScore || 0) <= 2.0) return "short"
+      return "hold"
+
     case "multi-indicator":
       const signals = generateSignals({
         rsi: current.rsi14,
@@ -239,6 +273,9 @@ function evaluateStrategy(
         bollingerLower: current.bollingerLower,
         stochasticK: current.stochasticK,
         adx: current.adx,
+        superTrendDirection: current.superTrendDirection,
+        zScore: current.zScore,
+        mfi: current.mfi,
       })
 
       const buySignals = signals.filter((s) => s.type === "buy").length
@@ -261,6 +298,10 @@ function getEntryReason(strategy: BacktestConfig["strategy"], current: ChartData
       return `MACD Strategy: MACD = ${current.macd.toFixed(2)}, Signal = ${current.macdSignal.toFixed(2)}`
     case "ema-crossover":
       return `EMA Crossover: EMA8 = ${current.ema8.toFixed(2)}, EMA20 = ${current.ema20.toFixed(2)}`
+    case "supertrend":
+      return `SuperTrend: Direction turned bullish (close = ${current.close.toFixed(2)})`
+    case "zscore":
+      return `Z-Score Strategy: Z-Score = ${(current.zScore || 0).toFixed(2)}`
     case "multi-indicator":
       return `Multi-Indicator: Multiple signals aligned`
     default:
