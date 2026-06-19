@@ -16,9 +16,9 @@ import {
 
 export async function fetchStockData(ticker: string, interval = "15m"): Promise<ChartDataPoint[]> {
   try {
-    console.log("[v0] Fetching stock data for:", ticker)
+    console.log("[v0] Fetching stock data for:", ticker, "timeframe:", interval)
 
-    const response = await fetch(`/api/stock/intraday/${ticker}`)
+    const response = await fetch(`/api/stock/intraday/${ticker}?timeframe=${interval}`)
 
     if (!response.ok) {
       const error = await response.json()

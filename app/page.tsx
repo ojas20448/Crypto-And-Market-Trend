@@ -21,6 +21,7 @@ import type { ChartDataPoint, Prediction } from "@/lib/types"
 
 export default function HomePage() {
   const [selectedTicker, setSelectedTicker] = useState("BTC")
+  const [timeframe, setTimeframe] = useState("15m")
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [prediction, setPrediction] = useState<Prediction | null>(null)
@@ -29,11 +30,12 @@ export default function HomePage() {
   const [marketData, setMarketData] = useState<any>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [tickDirection, setTickDirection] = useState<"up" | "down" | "flat">("flat")
 
-  const loadData = async () => {
+  const loadData = async (currentTf = timeframe) => {
     setLoading(true)
     try {
-      const data = await fetchStockData(selectedTicker)
+      const data = await fetchStockData(selectedTicker, currentTf)
       const quote = await fetchStockQuote(selectedTicker)
 
       if (quote && data.length > 0) {
@@ -73,25 +75,82 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    loadData()
+    loadData(timeframe)
+  }, [selectedTicker, timeframe])
+
+  // Reset prediction when selected ticker changes
+  useEffect(() => {
+    setPrediction(null)
   }, [selectedTicker])
 
   useEffect(() => {
-    if (chartData.length > 0) {
+    if (chartData.length > 0 && !predictionLoading && !prediction) {
       loadPrediction()
     }
-  }, [chartData])
+  }, [chartData.length])
 
+  // Major API Refresh (every 30 seconds)
   useEffect(() => {
     if (!autoRefresh) return
 
     const interval = setInterval(() => {
-      console.log("[v0] Auto-refreshing data...")
-      loadData()
+      console.log("[v0] Auto-refreshing data from API...")
+      loadData(timeframe)
     }, 30000) // 30 seconds
 
     return () => clearInterval(interval)
-  }, [selectedTicker, autoRefresh])
+  }, [selectedTicker, timeframe, autoRefresh])
+
+  // Sub-tick Live Simulator (every 2 seconds)
+  useEffect(() => {
+    if (!autoRefresh || loading || !marketData || chartData.length === 0) return
+
+    const interval = setInterval(() => {
+      // Tiny random price fluctuation between -0.05% and +0.05%
+      const percentChange = (Math.random() - 0.5) * 0.001
+      const direction = percentChange >= 0 ? "up" : "down"
+      
+      setMarketData((prevQuote: any) => {
+        if (!prevQuote) return null
+        const oldPrice = prevQuote.price
+        const newPrice = oldPrice * (1 + percentChange)
+        const originalPrevClose = prevQuote.previousClose || (oldPrice / (1 + parseFloat(prevQuote.changePercent) / 100))
+        const changeFromClose = newPrice - originalPrevClose
+        const newPercent = (changeFromClose / originalPrevClose) * 100
+
+        return {
+          ...prevQuote,
+          price: newPrice,
+          change: changeFromClose,
+          changePercent: `${newPercent >= 0 ? "+" : ""}${newPercent.toFixed(2)}%`,
+          high: Math.max(prevQuote.high || newPrice, newPrice),
+          low: Math.min(prevQuote.low || newPrice, newPrice),
+        }
+      })
+
+      setChartData((prevChartData) => {
+        if (prevChartData.length === 0) return prevChartData
+        const updated = [...prevChartData]
+        const lastIdx = updated.length - 1
+        const oldClose = updated[lastIdx].close
+        const newClose = oldClose * (1 + percentChange)
+        
+        updated[lastIdx] = {
+          ...updated[lastIdx],
+          close: newClose,
+          high: Math.max(updated[lastIdx].high, newClose),
+          low: Math.min(updated[lastIdx].low, newClose),
+        }
+        return updated
+      })
+
+      setTickDirection(direction)
+      const timer = setTimeout(() => setTickDirection("flat"), 800)
+      return () => clearTimeout(timer)
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [autoRefresh, loading, marketData == null, chartData.length === 0])
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,7 +165,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <Select value={selectedTicker} onValueChange={setSelectedTicker}>
-              <SelectTrigger className="w-[240px]">
+              <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="Select ticker" />
               </SelectTrigger>
               <SelectContent>
@@ -124,6 +183,20 @@ export default function HomePage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={timeframe} onValueChange={setTimeframe}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Timeframe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5m">5m</SelectItem>
+                <SelectItem value="15m">15m</SelectItem>
+                <SelectItem value="1h">1h</SelectItem>
+                <SelectItem value="4h">4h</SelectItem>
+                <SelectItem value="1d">1d</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Button
               onClick={() => setAutoRefresh(!autoRefresh)}
               size="sm"
@@ -144,7 +217,7 @@ export default function HomePage() {
               </svg>
               {autoRefresh ? "Live" : "Paused"}
             </Button>
-            <Button onClick={loadData} disabled={loading} size="icon" variant="outline">
+            <Button onClick={() => loadData(timeframe)} disabled={loading} size="icon" variant="outline">
               <svg
                 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
                 fill="none"
@@ -193,10 +266,16 @@ export default function HomePage() {
           <>
             {marketData && chartData.length > 0 && (
               <div className="grid gap-4 md:grid-cols-4">
-                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">Current Price</div>
-                    <div className="text-2xl font-bold mt-1 tracking-tight">
+                    <div className={`text-2xl font-bold mt-1 tracking-tight transition-all duration-500 transform ${
+                      tickDirection === "up" 
+                        ? "text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)] scale-[1.02]" 
+                        : tickDirection === "down" 
+                        ? "text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)] scale-[0.98]" 
+                        : "text-foreground"
+                    }`}>
                       ₹{marketData.price?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "N/A"}
                     </div>
                     {marketData.change !== undefined && marketData.changePercent !== undefined && (
@@ -212,7 +291,7 @@ export default function HomePage() {
                     )}
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">24h High</div>
                     <div className="text-2xl font-bold mt-1 tracking-tight">
@@ -221,7 +300,7 @@ export default function HomePage() {
                     <div className="text-xs text-muted-foreground mt-2">Daily high threshold</div>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">24h Low</div>
                     <div className="text-2xl font-bold mt-1 tracking-tight">
@@ -230,7 +309,7 @@ export default function HomePage() {
                     <div className="text-xs text-muted-foreground mt-2">Daily low threshold</div>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg">
+                <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardContent className="pt-6">
                     <div className="text-sm font-medium text-muted-foreground">Volume</div>
                     <div className="text-2xl font-bold mt-1 tracking-tight">
