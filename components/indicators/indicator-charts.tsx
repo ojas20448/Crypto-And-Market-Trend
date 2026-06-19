@@ -21,12 +21,12 @@ interface IndicatorChartsProps {
 
 export function IndicatorCharts({ data }: IndicatorChartsProps) {
   const chartConfig = {
-    rsi: { label: "RSI", color: "hsl(var(--chart-1))" },
-    macd: { label: "MACD", color: "hsl(var(--chart-2))" },
-    signal: { label: "Signal", color: "hsl(var(--chart-3))" },
-    histogram: { label: "Histogram", color: "hsl(var(--chart-4))" },
-    k: { label: "%K", color: "hsl(var(--chart-5))" },
-    d: { label: "%D", color: "hsl(var(--chart-1))" },
+    rsi: { label: "RSI", color: "var(--chart-1)" },
+    macd: { label: "MACD", color: "var(--chart-2)" },
+    signal: { label: "Signal", color: "var(--chart-3)" },
+    histogram: { label: "Histogram", color: "var(--chart-4)" },
+    k: { label: "%K", color: "var(--chart-5)" },
+    d: { label: "%D", color: "var(--chart-1)" },
   }
 
   const formattedData = data.map((point) => ({
@@ -50,19 +50,19 @@ export function IndicatorCharts({ data }: IndicatorChartsProps) {
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ReferenceLine y={70} stroke="hsl(var(--destructive))" strokeDasharray="3 3" />
-                <ReferenceLine y={30} stroke="hsl(var(--success))" strokeDasharray="3 3" />
-                <ReferenceLine y={50} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                <ReferenceLine y={70} stroke="var(--destructive)" strokeOpacity={0.5} strokeDasharray="3 3" />
+                <ReferenceLine y={30} stroke="var(--success)" strokeOpacity={0.5} strokeDasharray="3 3" />
+                <ReferenceLine y={50} stroke="var(--muted-foreground)" strokeOpacity={0.4} strokeDasharray="3 3" />
                 <Line type="monotone" dataKey="rsi" stroke="var(--color-rsi)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -79,17 +79,17 @@ export function IndicatorCharts({ data }: IndicatorChartsProps) {
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.4} strokeDasharray="3 3" />
                 <Line type="monotone" dataKey="macd" stroke="var(--color-macd)" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="signal" stroke="var(--color-signal)" strokeWidth={2} dot={false} />
               </LineChart>
@@ -107,18 +107,18 @@ export function IndicatorCharts({ data }: IndicatorChartsProps) {
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ReferenceLine y={80} stroke="hsl(var(--destructive))" strokeDasharray="3 3" />
-                <ReferenceLine y={20} stroke="hsl(var(--success))" strokeDasharray="3 3" />
+                <ReferenceLine y={80} stroke="var(--destructive)" strokeOpacity={0.5} strokeDasharray="3 3" />
+                <ReferenceLine y={20} stroke="var(--success)" strokeOpacity={0.5} strokeDasharray="3 3" />
                 <Line type="monotone" dataKey="k" stroke="var(--color-k)" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="d" stroke="var(--color-d)" strokeWidth={2} dot={false} />
               </LineChart>
@@ -136,17 +136,17 @@ export function IndicatorCharts({ data }: IndicatorChartsProps) {
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.4} strokeDasharray="3 3" />
                 <Area
                   type="monotone"
                   dataKey="histogram"

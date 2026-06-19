@@ -12,8 +12,8 @@ interface EquityCurveProps {
 
 export function EquityCurve({ result }: EquityCurveProps) {
   const chartConfig = {
-    equity: { label: "Equity", color: "hsl(var(--chart-1))" },
-    drawdown: { label: "Drawdown", color: "hsl(var(--destructive))" },
+    equity: { label: "Equity", color: "var(--chart-1)" },
+    drawdown: { label: "Drawdown", color: "var(--destructive)" },
   }
 
   const chartData = result.equityCurve.map((point) => ({
@@ -33,16 +33,16 @@ export function EquityCurve({ result }: EquityCurveProps) {
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
@@ -78,16 +78,16 @@ export function EquityCurve({ result }: EquityCurveProps) {
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `${value.toFixed(0)}%`}

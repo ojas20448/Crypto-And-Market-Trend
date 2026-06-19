@@ -1,90 +1,61 @@
-# Stock Trend Predictor
+# Stock Trend Predictor - AI-Powered Technical Analysis
 
-An advanced stock market analysis and prediction tool with real-time charting, technical indicators, and rule-based predictions for cryptocurrencies and Indian stocks.
+An advanced stock prediction application using real-time market data, technical indicators, and AI-powered trend analysis.
 
 ## Features
 
-- **Real-time Data**: Live cryptocurrency prices from CoinGecko (free, no API key required)
-- **Technical Indicators**: RSI, MACD, EMA, Bollinger Bands, Stochastic, ADX, ATR, OBV, VWAP
-- **Interactive Charts**: Candlestick charts, volume analysis, trend indicators
-- **Rule-Based Predictions**: Trading signals with confidence scores based on multiple indicators
-- **Performance Tracking**: Monitor prediction accuracy and win rates
-- **Backtesting**: Test trading strategies on historical data
-- **Currency**: All prices displayed in Indian Rupees (₹)
+- Real-time cryptocurrency data (Bitcoin, Ethereum, Binance Coin)
+- Indian stock market data (Reliance, TCS, HDFC Bank, Infosys, ICICI Bank)
+- Advanced technical indicators (EMA, RSI, MACD, Bollinger Bands, Stochastic, ATR, OBV, VWAP, ADX)
+- AI-powered trend predictions using Vercel AI SDK
+- Interactive candlestick and line charts
+- Performance analytics and backtesting
+- Dark theme with light chart backgrounds for optimal visibility
 
-## Supported Markets
+## Setup Instructions
 
-### Cryptocurrencies
-- Bitcoin (BTC)
-- Ethereum (ETH)
-- Binance Coin (BNB)
+### No Configuration Required!
 
-### Indian Stocks
-- Reliance Industries
-- Tata Consultancy Services (TCS)
-- HDFC Bank
-- Infosys
-- ICICI Bank
+This app uses completely free data sources that require no API keys or registration:
 
-## Getting Started
+**Cryptocurrency Data**: Powered by [CoinGecko API](https://www.coingecko.com/en/api)
+- Real-time prices for BTC, ETH, BNB
+- 24-hour volume and price changes
+- Historical data (30 days)
+- Completely free, no rate limits for basic usage
 
-The app works immediately without any configuration. **No API keys required!**
+**Indian Stock Data**: Currently using realistic mock data
+- For production use, you can integrate paid Indian stock APIs
+- Realistic market hours (9:15 AM - 3:30 PM IST)
+- Proper volatility patterns
 
-### Data Sources
 
-- **Cryptocurrencies**: Real-time data from CoinGecko API (free tier, rate-limited)
-- **Indian Stocks**: Realistic mock data with proper market patterns
+## Available Markets
 
-When rate limits are hit, the app automatically falls back to realistic mock data.
+**Cryptocurrencies (Live Data via CoinGecko)**
+- BTC - Bitcoin
+- ETH - Ethereum
+- BNB - Binance Coin
 
-## Technical Stack
+**Indian Stocks (Mock Data)**
+- RELIANCE.BSE - Reliance Industries
+- TCS.BSE - Tata Consultancy Services
+- HDFCBANK.BSE - HDFC Bank
+- INFY.BSE - Infosys
+- ICICIBANK.BSE - ICICI Bank
 
-- **Framework**: Next.js 16 with App Router
-- **UI**: React, Tailwind CSS, shadcn/ui
-- **Charts**: Recharts, Canvas API
-- **Indicators**: Custom technical analysis algorithms
-- **Predictions**: Rule-based trading signals from multiple indicators
+## Technology Stack
 
-## Development
+- Next.js 16 with App Router
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Recharts for data visualization
+- SDK for predictions
+- CoinGecko API for cryptocurrency data
 
-\`\`\`bash
-# Install dependencies
-npm install
+## Local Development
 
-# Run development server
-npm run dev
+The app runs entirely in the browser using the "Next.js" runtime. Simply open the app and start exploring stock trends!
 
-# Build for production
-npm run build
-\`\`\`
 
-## Features in Detail
-
-### Technical Indicators
-- **Trend Indicators**: EMA (8, 20, 50), VWAP
-- **Momentum Indicators**: RSI, Stochastic, MACD
-- **Volatility Indicators**: Bollinger Bands, ATR
-- **Volume Indicators**: OBV, Volume
-- **Trend Strength**: ADX
-
-### Trading Signals
-Automatically generated from multiple indicators:
-- BUY signals when multiple bullish indicators align
-- SELL signals when multiple bearish indicators align
-- HOLD signals for neutral or mixed market conditions
-
-### Performance Analytics
-- Prediction accuracy tracking
-- Confusion matrix analysis
-- Signal-by-signal performance
-- Confidence calibration charts
-
-### Backtesting
-- Configurable trading strategies
-- Stop-loss and take-profit settings
-- Performance metrics (Sharpe ratio, max drawdown, profit factor)
-- Detailed trade logs
-
-## License
-
-MIT

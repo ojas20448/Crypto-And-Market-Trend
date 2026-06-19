@@ -22,13 +22,13 @@ export function PriceChart({ data, title = "Price Chart" }: PriceChartProps) {
   const [showVWAP, setShowVWAP] = useState(false)
 
   const chartConfig = {
-    close: { label: "Close", color: "hsl(var(--chart-1))" },
-    ema8: { label: "EMA 8", color: "hsl(var(--chart-2))" },
-    ema20: { label: "EMA 20", color: "hsl(var(--chart-3))" },
-    ema50: { label: "EMA 50", color: "hsl(var(--chart-4))" },
-    bbUpper: { label: "BB Upper", color: "hsl(var(--chart-5))" },
-    bbLower: { label: "BB Lower", color: "hsl(var(--chart-5))" },
-    vwap: { label: "VWAP", color: "hsl(var(--chart-1))" },
+    close: { label: "Close", color: "var(--foreground)" },
+    ema8: { label: "EMA 8", color: "var(--chart-2)" },
+    ema20: { label: "EMA 20", color: "var(--chart-3)" },
+    ema50: { label: "EMA 50", color: "var(--chart-4)" },
+    bbUpper: { label: "BB Upper", color: "var(--chart-5)" },
+    bbLower: { label: "BB Lower", color: "var(--chart-5)" },
+    vwap: { label: "VWAP", color: "var(--chart-1)" },
   }
 
   const formattedData = data.map((point) => ({
@@ -92,17 +92,17 @@ export function PriceChart({ data, title = "Price Chart" }: PriceChartProps) {
         <ChartContainer config={chartConfig} className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={formattedData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
               <XAxis
                 dataKey="time"
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "var(--foreground)" }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
                 domain={["auto", "auto"]}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "var(--foreground)" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `₹${value.toFixed(0)}`}

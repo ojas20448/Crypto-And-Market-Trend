@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts"
+import { ComposedChart, Bar, Cell, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts"
 import type { ChartDataPoint } from "@/lib/types"
 import { format } from "@/lib/date-utils"
 import { Switch } from "@/components/ui/switch"
@@ -17,8 +17,8 @@ export function VolumeChart({ data }: VolumeChartProps) {
   const [showOBV, setShowOBV] = useState(true)
 
   const chartConfig = {
-    volume: { label: "Volume", color: "hsl(var(--chart-1))" },
-    obv: { label: "OBV", color: "hsl(var(--chart-2))" },
+    volume: { label: "Volume", color: "var(--chart-1)" },
+    obv: { label: "OBV", color: "var(--chart-2)" },
   }
 
   const formattedData = data.map((point, index) => {
@@ -29,7 +29,7 @@ export function VolumeChart({ data }: VolumeChartProps) {
       time: format(new Date(point.timestamp), "MMM dd HH:mm"),
       volume: point.volume,
       obv: point.obv,
-      fill: isUp ? "hsl(var(--success))" : "hsl(var(--destructive))",
+      fill: isUp ? "var(--success)" : "var(--destructive)",
     }
   })
 
@@ -49,21 +49,21 @@ export function VolumeChart({ data }: VolumeChartProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="bg-white dark:bg-gray-50">
+      <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={formattedData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
               <XAxis
                 dataKey="time"
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "var(--foreground)" }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
                 yAxisId="left"
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "var(--foreground)" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
@@ -72,7 +72,7 @@ export function VolumeChart({ data }: VolumeChartProps) {
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
@@ -102,7 +102,11 @@ export function VolumeChart({ data }: VolumeChartProps) {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: "12px" }} />
-              <Bar yAxisId="left" dataKey="volume" fill="var(--color-volume)" radius={[4, 4, 0, 0]} opacity={0.8} />
+              <Bar yAxisId="left" dataKey="volume" radius={[4, 4, 0, 0]} opacity={0.8}>
+                {formattedData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Bar>
               {showOBV && (
                 <Line
                   yAxisId="right"

@@ -2,14 +2,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ChartDataPoint } from "@/lib/types"
-import { format } from "@/lib/date-utils"
 import { useEffect, useRef, useState } from "react"
+import { useTheme } from "next-themes"
+import { format } from "@/lib/date-utils"
 
 interface CandlestickChartProps {
   data: ChartDataPoint[]
+  title?: string
+  description?: string
 }
 
-export function CandlestickChart({ data }: CandlestickChartProps) {
+export function CandlestickChart({ data, title = "Candlestick Chart", description = "OHLC price action visualization" }: CandlestickChartProps) {
+  const { theme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 400 })
@@ -44,6 +48,18 @@ export function CandlestickChart({ data }: CandlestickChartProps) {
     // Clear canvas
     ctx.clearRect(0, 0, dimensions.width, dimensions.height)
 
+    // Resolve CSS variables dynamically
+    const getCssVar = (name: string, fallback: string) => {
+      if (typeof window === "undefined") return fallback
+      const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+      return val || fallback
+    }
+
+    const borderColor = getCssVar("--border", "#e2e8f0")
+    const mutedForegroundColor = getCssVar("--muted-foreground", "#64748b")
+    const successColor = getCssVar("--success", "#10b981")
+    const destructiveColor = getCssVar("--destructive", "#ef4444")
+
     // Chart dimensions
     const padding = { top: 20, right: 60, bottom: 40, left: 60 }
     const chartWidth = dimensions.width - padding.left - padding.right
@@ -67,7 +83,7 @@ export function CandlestickChart({ data }: CandlestickChartProps) {
     const candleSpacing = chartWidth / data.length
 
     // Draw grid
-    ctx.strokeStyle = "hsl(var(--border))"
+    ctx.strokeStyle = borderColor
     ctx.lineWidth = 0.5
     for (let i = 0; i <= 5; i++) {
       const y = padding.top + (chartHeight / 5) * i
@@ -78,7 +94,7 @@ export function CandlestickChart({ data }: CandlestickChartProps) {
 
       // Price labels
       const price = maxPrice - (priceRange / 5) * i
-      ctx.fillStyle = "hsl(var(--muted-foreground))"
+      ctx.fillStyle = mutedForegroundColor
       ctx.font = "11px monospace"
       ctx.textAlign = "right"
       ctx.fillText(`₹${price.toFixed(2)}`, padding.left - 10, y + 4)
@@ -89,7 +105,7 @@ export function CandlestickChart({ data }: CandlestickChartProps) {
       const x = padding.left + index * candleSpacing + candleSpacing / 2
 
       const isUp = candle.close >= candle.open
-      const color = isUp ? "hsl(var(--success))" : "hsl(var(--destructive))"
+      const color = isUp ? successColor : destructiveColor
 
       // Draw wick
       ctx.strokeStyle = color
@@ -111,7 +127,7 @@ export function CandlestickChart({ data }: CandlestickChartProps) {
     // Draw time labels
     const labelCount = Math.min(6, data.length)
     const labelInterval = Math.floor(data.length / labelCount)
-    ctx.fillStyle = "hsl(var(--muted-foreground))"
+    ctx.fillStyle = mutedForegroundColor
     ctx.font = "11px sans-serif"
     ctx.textAlign = "center"
 
@@ -125,14 +141,14 @@ export function CandlestickChart({ data }: CandlestickChartProps) {
     }
 
     // Draw axes
-    ctx.strokeStyle = "hsl(var(--border))"
+    ctx.strokeStyle = borderColor
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(padding.left, padding.top)
     ctx.lineTo(padding.left, padding.top + chartHeight)
     ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight)
     ctx.stroke()
-  }, [data, dimensions])
+  }, [data, dimensions, theme])
 
   return (
     <Card>

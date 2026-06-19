@@ -14,7 +14,7 @@ export function ConfidenceAnalysis({ predictions }: ConfidenceAnalysisProps) {
   const confidenceStats = calculateConfidencePerformance(predictions)
 
   const chartConfig = {
-    accuracy: { label: "Accuracy", color: "hsl(var(--chart-2))" },
+    accuracy: { label: "Accuracy", color: "var(--chart-2)" },
   }
 
   const chartData = confidenceStats.map((stat) => ({
@@ -33,11 +33,11 @@ export function ConfidenceAnalysis({ predictions }: ConfidenceAnalysisProps) {
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="range" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
+              <XAxis dataKey="range" tick={{ fontSize: 11, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
               <YAxis
                 domain={[0, 100]}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "var(--foreground)" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value}%`}

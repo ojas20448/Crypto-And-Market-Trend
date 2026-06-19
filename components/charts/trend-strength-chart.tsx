@@ -12,10 +12,10 @@ interface TrendStrengthChartProps {
 
 export function TrendStrengthChart({ data }: TrendStrengthChartProps) {
   const chartConfig = {
-    adx: { label: "ADX", color: "hsl(var(--chart-1))" },
-    plusDI: { label: "+DI", color: "hsl(var(--success))" },
-    minusDI: { label: "-DI", color: "hsl(var(--destructive))" },
-    atr: { label: "ATR", color: "hsl(var(--chart-4))" },
+    adx: { label: "ADX", color: "var(--chart-1)" },
+    plusDI: { label: "+DI", color: "var(--success)" },
+    minusDI: { label: "-DI", color: "var(--destructive)" },
+    atr: { label: "ATR", color: "var(--chart-4)" },
   }
 
   const formattedData = data.map((point) => ({
@@ -37,17 +37,17 @@ export function TrendStrengthChart({ data }: TrendStrengthChartProps) {
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ReferenceLine y={25} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                <ReferenceLine y={25} stroke="var(--muted-foreground)" strokeOpacity={0.4} strokeDasharray="3 3" />
                 <Line type="monotone" dataKey="adx" stroke="var(--color-adx)" strokeWidth={2} dot={false} />
                 <Line
                   type="monotone"
@@ -80,15 +80,15 @@ export function TrendStrengthChart({ data }: TrendStrengthChartProps) {
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "var(--foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
-                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Line type="monotone" dataKey="atr" stroke="var(--color-atr)" strokeWidth={2} dot={false} />
               </LineChart>

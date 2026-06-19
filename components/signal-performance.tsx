@@ -14,8 +14,8 @@ export function SignalPerformance({ predictions }: SignalPerformanceProps) {
   const signalStats = calculateSignalPerformance(predictions)
 
   const chartConfig = {
-    correct: { label: "Correct", color: "hsl(var(--success))" },
-    incorrect: { label: "Incorrect", color: "hsl(var(--destructive))" },
+    correct: { label: "Correct", color: "var(--success)" },
+    incorrect: { label: "Incorrect", color: "var(--destructive)" },
   }
 
   const chartData = [
@@ -48,13 +48,13 @@ export function SignalPerformance({ predictions }: SignalPerformanceProps) {
         <CardTitle>Performance by Signal Type</CardTitle>
         <CardDescription>Accuracy and returns for each prediction type</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-white dark:bg-gray-50">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="signal" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--muted-foreground)" strokeOpacity={0.15} />
+              <XAxis dataKey="signal" tick={{ fontSize: 12, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: "var(--foreground)" }} tickLine={false} axisLine={false} />
               <ChartTooltip
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null
