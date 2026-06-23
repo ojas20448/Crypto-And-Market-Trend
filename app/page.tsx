@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import { IndicatorPanel } from "@/components/indicators/indicator-panel"
@@ -31,12 +31,17 @@ export default function HomePage() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [tickDirection, setTickDirection] = useState<"up" | "down" | "flat">("flat")
+  const lastInrPriceRef = useRef<number | null>(null)
 
   const loadData = async (currentTf = timeframe) => {
     setLoading(true)
     try {
       const data = await fetchStockData(selectedTicker, currentTf)
       const quote = await fetchStockQuote(selectedTicker)
+
+      if (quote) {
+        lastInrPriceRef.current = quote.price
+      }
 
       if (quote && data.length > 0) {
         const updatedData = [...data]
@@ -89,20 +94,25 @@ export default function HomePage() {
     }
   }, [chartData.length])
 
-  // Major API Refresh (every 30 seconds)
+  // Major API Refresh (30s for crypto, 10s for stocks to achieve Option 3 fast polling)
   useEffect(() => {
     if (!autoRefresh) return
 
+    const isCrypto = ["BTC", "ETH", "BNB"].includes(selectedTicker)
+    const delay = isCrypto ? 30000 : 10000
+
     const interval = setInterval(() => {
-      console.log("[v0] Auto-refreshing data from API...")
+      console.log(`[v0] Auto-refreshing ${selectedTicker} data from API...`)
       loadData(timeframe)
-    }, 30000) // 30 seconds
+    }, delay)
 
     return () => clearInterval(interval)
   }, [selectedTicker, timeframe, autoRefresh])
 
-  // Sub-tick Live Simulator (every 2 seconds)
+  // Sub-tick Live Simulator (every 2 seconds, only for Indian stocks)
   useEffect(() => {
+    const isCrypto = ["BTC", "ETH", "BNB"].includes(selectedTicker)
+    if (isCrypto) return // Handled by WebSocket for Crypto
     if (!autoRefresh || loading || !marketData || chartData.length === 0) return
 
     const interval = setInterval(() => {
@@ -150,7 +160,94 @@ export default function HomePage() {
     }, 2000)
 
     return () => clearInterval(interval)
-  }, [autoRefresh, loading, marketData == null, chartData.length === 0])
+  }, [autoRefresh, loading, marketData == null, chartData.length === 0, selectedTicker])
+
+  // WebSockets for Real-Time Crypto Data (Option 1 - Binance WebSockets)
+  useEffect(() => {
+    const isCrypto = ["BTC", "ETH", "BNB"].includes(selectedTicker)
+    if (!isCrypto || !autoRefresh || loading) return
+
+    const wsSymbol = selectedTicker.toLowerCase() + "usdt"
+    const socketUrl = `wss://stream.binance.com:9443/ws/${wsSymbol}@ticker`
+    console.log(`[v0] Connecting WebSocket for ${selectedTicker}:`, socketUrl)
+
+    let socket: WebSocket | null = new WebSocket(socketUrl)
+
+    socket.onopen = () => {
+      console.log(`[v0] WebSocket connected for ${selectedTicker}`)
+    }
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        const usdPrice = parseFloat(data.c)
+        if (isNaN(usdPrice) || usdPrice <= 0) return
+
+        // Calculate active conversion rate from USD to INR dynamically using current quote
+        let rate = 84.0
+        if (lastInrPriceRef.current && lastInrPriceRef.current > 0) {
+          rate = lastInrPriceRef.current / usdPrice
+        }
+
+        const inrPrice = usdPrice * rate
+        const dailyHigh = parseFloat(data.h) * rate
+        const dailyLow = parseFloat(data.l) * rate
+        const dailyVolume = parseFloat(data.q) * rate // total quote volume in USD * rate = INR Volume
+        const inrChange = parseFloat(data.p) * rate
+        const changePercentStr = `${parseFloat(data.P) >= 0 ? "+" : ""}${parseFloat(data.P).toFixed(2)}%`
+
+        setMarketData((prevQuote: any) => {
+          if (!prevQuote) return null
+          return {
+            ...prevQuote,
+            price: inrPrice,
+            change: inrChange,
+            changePercent: changePercentStr,
+            high: dailyHigh,
+            low: dailyLow,
+            volume: dailyVolume,
+          }
+        })
+
+        setChartData((prevChartData) => {
+          if (prevChartData.length === 0) return prevChartData
+          const updated = [...prevChartData]
+          const lastIdx = updated.length - 1
+          const oldClose = updated[lastIdx].close
+          const direction = inrPrice >= oldClose ? "up" : "down"
+
+          updated[lastIdx] = {
+            ...updated[lastIdx],
+            close: inrPrice,
+            high: Math.max(updated[lastIdx].high, inrPrice),
+            low: Math.min(updated[lastIdx].low, inrPrice),
+          }
+
+          setTickDirection(direction)
+          const timer = setTimeout(() => setTickDirection("flat"), 800)
+          return updated
+        })
+
+        setLastUpdate(new Date())
+      } catch (err) {
+        console.error("[v0] Error handling WebSocket message:", err)
+      }
+    }
+
+    socket.onerror = (err) => {
+      console.error("[v0] WebSocket error:", err)
+    }
+
+    socket.onclose = () => {
+      console.log(`[v0] WebSocket closed for ${selectedTicker}`)
+    }
+
+    return () => {
+      if (socket) {
+        socket.close()
+      }
+    }
+  }, [selectedTicker, autoRefresh, loading])
 
   return (
     <div className="min-h-screen bg-background">
